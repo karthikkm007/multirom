@@ -558,6 +558,9 @@ int multirom(const char *rom_to_boot)
         }
     }
 
+#ifdef MR_ALLOW_PREMACA_FIXES
+    s.new_primary_inprogress = 0;
+#endif
     if(to_boot)
     {
         s.auto_boot_type &= ~(AUTOBOOT_FORCE_CURRENT);
@@ -1033,17 +1036,23 @@ int multirom_load_status(struct multirom_status *s)
     fclose(f);
 
     // find USB drive if we're booting from it
+#ifdef MR_ALLOW_PREMACA_FIXES
+    if(s->curr_rom_part)
+#else
     if(s->curr_rom_part && s->is_second_boot)
+#endif
     {
         struct usb_partition *p = NULL;
         int tries = 0;
         while(!p && tries < 10)
         {
+	    ERROR("Scanning USB partitions.. Try:%d\n",tries+1);
             multirom_update_partitions(s);
             p = multirom_get_partition(s, s->curr_rom_part);
 
             if(p)
             {
+		ERROR("Scanning USB partition (%s) for ROMs.. \n",p->name);
                 multirom_scan_partition_for_roms(s, p);
                 break;
             }
